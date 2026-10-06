@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BukuKas: Keuangan Keluarga & UMKM Cilok</title>
+  
+  <!-- PWA Meta Tags & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BukuKas">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            },
+            cilok: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Custom scrollbar halus */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cilok-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+            <i data-lucide="wallet-cards" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg font-bold text-slate-900 leading-tight">BukuKas Multi-Akun</h1>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-semibold border border-brand-200">v1.0</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium">Rumah Tangga & Bisnis Cilok</p>
+          </div>
+        </div>
+
+        <!-- Connection Status & Settings -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Status Indicator Pill -->
+          <div id="connectionStatusBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span id="connectionStatusText">Mode Demo / Offline</span>
+          </div>
+
+          <!-- Tombol Refresh / Sinkron -->
+          <button id="btnRefresh" title="Sinkronkan data dengan Google Sheets" class="p-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-slate-100 transition-colors border border-slate-200">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Tombol Install PWA di HP -->
+          <button id="btnInstallApp" onclick="triggerPWAInstall()" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-cilok-500 hover:bg-cilok-600 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <i data-lucide="smartphone" class="w-4 h-4 text-white"></i>
+            <span class="hidden md:inline">Install di HP</span>
+            <span class="md:hidden">Install</span>
+          </button>
+
+          <!-- Tombol Modal Pengaturan Google Sheets -->
+          <button id="btnOpenSettings" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <i data-lucide="sheet" class="w-4 h-4 text-emerald-400"></i>
+            <span class="hidden md:inline">Setup Google Sheets</span>
+            <span class="md:hidden">Sheets</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= BANNER NOTIFIKASI KONEKSI (Jika belum dikonfigurasi) ================= -->
+  <div id="unconfiguredBanner" class="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white px-4 py-2.5 text-xs sm:text-sm font-medium shadow-inner flex items-center justify-between">
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+        <span><strong>Tips Belajar:</strong> Web app saat ini berjalan dengan data demo lokal. Hubungkan ke <strong>Google Sheets</strong> Anda untuk sinkronisasi otomatis multi-perangkat!</span>
+      </div>
+      <button onclick="openSettingsModal()" class="shrink-0 underline font-bold hover:text-amber-100">Hubungkan Sekarang &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- 1. MODE FILTER TABS & TANGGAL HARI INI -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <!-- Tab Filter Akun -->
+      <div class="inline-flex p-1 bg-slate-200/80 rounded-xl space-x-1 shadow-inner self-start">
+        <button id="tabFilterAll" onclick="setAccountFilter('Semua')" class="filter-tab px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 bg-white text-slate-800 shadow-sm">
+          Semua Data
+        </button>
+        <button id="tabFilterKeluarga" onclick="setAccountFilter('Keluarga')" class="filter-tab px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 text-slate-600 hover:text-slate-900">
+          🏠 Keuangan Keluarga
+        </button>
+        <button id="tabFilterUMKM" onclick="setAccountFilter('UMKM Cilok')" class="filter-tab px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 text-slate-600 hover:text-slate-900">
+          🍡 UMKM Cilok
+        </button>
+      </div>
+
+      <!-- Informasi Tanggal & Jam Aktif -->
+      <div class="text-xs text-slate-500 flex items-center gap-2 self-start sm:self-auto bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+        <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span id="currentDateDisplay">Memuat tanggal...</span>
+      </div>
+    </div>
+
+    <!-- 2. SUMMARY STAT CARDS (METRICS KPI) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Card 1: Saldo Gabungan -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-brand-50 rounded-full group-hover:scale-125 transition-transform duration-300"></div>
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Saldo Gabungan</span>
+          <div class="p-2 rounded-xl bg-brand-100/60 text-brand-700">
+            <i data-lucide="banknote" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="relative z-10">
+          <div id="statTotalSaldo" class="text-2xl font-black text-slate-900 tracking-tight">Rp 0</div>
+          <p class="text-xs text-slate-500 mt-1">Keluarga + Usaha Cilok</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Saldo Keluarga -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-blue-50 rounded-full group-hover:scale-125 transition-transform duration-300"></div>
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-600">Saldo Rumah Tangga</span>
+          <div class="p-2 rounded-xl bg-blue-100/60 text-blue-700">
+            <i data-lucide="home" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="relative z-10">
+          <div id="statSaldoKeluarga" class="text-2xl font-black text-slate-900 tracking-tight">Rp 0</div>
+          <div class="flex items-center gap-2 mt-1 text-xs">
+            <span class="text-emerald-600 font-medium" id="statInKeluarga">+Rp 0</span>
+            <span class="text-slate-300">|</span>
+            <span class="text-rose-500 font-medium" id="statOutKeluarga">-Rp 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Saldo Kas UMKM Cilok -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-cilok-50 rounded-full group-hover:scale-125 transition-transform duration-300"></div>
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="text-xs font-bold uppercase tracking-wider text-cilok-600">Kas UMKM Cilok</span>
+          <div class="p-2 rounded-xl bg-cilok-100/60 text-cilok-700">
+            <i data-lucide="store" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="relative z-10">
+          <div id="statSaldoUMKM" class="text-2xl font-black text-slate-900 tracking-tight">Rp 0</div>
+          <div class="flex items-center gap-2 mt-1 text-xs">
+            <span class="text-emerald-600 font-medium" id="statInUMKM">+Rp 0</span>
+            <span class="text-slate-300">|</span>
+            <span class="text-rose-500 font-medium" id="statOutUMKM">-Rp 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Laba / Rugi Bersih UMKM Cilok -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-emerald-50 rounded-full group-hover:scale-125 transition-transform duration-300"></div>
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Laba Bersih UMKM</span>
+          <div id="statLabaBadge" class="p-2 rounded-xl bg-emerald-100/60 text-emerald-700">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="relative z-10">
+          <div id="statLabaUMKM" class="text-2xl font-black text-emerald-600 tracking-tight">Rp 0</div>
+          <p class="text-xs text-slate-500 mt-1">Penjualan dikurangi modal & operasional</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3. TWO-COLUMN WORKSPACE: FORM INPUT & DAFTAR TRANSAKSI + GRAFIK -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- KOLOM KIRI (5 Kolom): FORM INPUT TRANSAKSI CEPAT & GRAFIK -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- CARD FORM INPUT -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center font-bold">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </div>
+              <h2 class="text-base font-bold text-slate-900">Catat Transaksi Cepat</h2>
+            </div>
+            <span class="text-[11px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono">Form Real-time</span>
+          </div>
+
+          <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4">
+            
+            <!-- 1. Pilihan Jenis: Pemasukan vs Pengeluaran -->
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Jenis Transaksi</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btnTypeExpense" onclick="setTransactionType('Pengeluaran')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all bg-rose-50 text-rose-700 border-rose-300 ring-2 ring-rose-200">
+                  <i data-lucide="arrow-down-circle" class="w-4 h-4"></i>
+                  Pengeluaran
+                </button>
+                <button type="button" id="btnTypeIncome" onclick="setTransactionType('Pemasukan')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                  <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
+                  Pemasukan
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Pilihan Akun: Keluarga vs UMKM Cilok -->
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Pilih Modul / Akun</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btnAccountFamily" onclick="setTransactionAccount('Keluarga')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-200">
+                  <i data-lucide="home" class="w-4 h-4"></i>
+                  Keluarga
+                </button>
+                <button type="button" id="btnAccountUMKM" onclick="setTransactionAccount('UMKM Cilok')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                  <i data-lucide="utensils" class="w-4 h-4"></i>
+                  UMKM Cilok
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Nominal Input dengan Live Format Rupiah -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="inputNominal" class="block text-xs font-bold text-slate-600 uppercase tracking-wider">Nominal (Rp)</label>
+                <span id="nominalPreview" class="text-xs font-mono font-semibold text-brand-700">Rp 0</span>
+              </div>
+              <div class="relative rounded-xl shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
+                  Rp
+                </div>
+                <input type="number" id="inputNominal" required min="1" step="500" placeholder="Contoh: 50000" class="block w-full pl-10 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors font-semibold" oninput="updateNominalPreview(this.value)">
+              </div>
+            </div>
+
+            <!-- 4. Kategori Dropdown (Dinamis bergantung Akun & Jenis) -->
+            <div>
+              <label for="selectKategori" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Kategori Transaksi</label>
+              <select id="selectKategori" required class="block w-full py-2.5 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+                <!-- Diisi otomatis oleh JavaScript -->
+              </select>
+            </div>
+
+            <!-- 5. Tanggal Transaksi -->
+            <div>
+              <label for="inputTanggal" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Tanggal</label>
+              <input type="date" id="inputTanggal" required class="block w-full py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+            </div>
+
+            <!-- 6. Catatan Tambahan (Opsional) -->
+            <div>
+              <label for="inputCatatan" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Catatan (Keterangan)</label>
+              <input type="text" id="inputCatatan" placeholder="Contoh: Beli tepung tapioka 5kg atau Penjualan hari Sabtu" class="block w-full py-2 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="btnSubmitTransaction" class="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-600 to-teal-700 hover:from-brand-700 hover:to-teal-800 shadow-md shadow-brand-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span id="btnSubmitText">Simpan Transaksi</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- CARD GRAFIK VISUALISASI -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-brand-600"></i>
+              Proporsi Pengeluaran
+            </h3>
+            <span class="text-xs text-slate-400" id="chartFilterLabel">Semua Data</span>
+          </div>
+          <div class="relative h-56 flex items-center justify-center">
+            <canvas id="expenseChart"></canvas>
+            <div id="chartEmptyMessage" class="hidden text-xs text-slate-400 text-center">Belum ada data pengeluaran untuk ditampilkan</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- KOLOM KANAN (7 Kolom): RIWAYAT TABEL TRANSAKSI -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm">
+          
+          <!-- Header Riwayat & Filter Pencarian -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="history" class="w-4 h-4 text-slate-600"></i>
+                Riwayat Transaksi
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">Daftar pemasukan & pengeluaran yang tercatat</p>
+            </div>
+
+            <!-- Tombol Export CSV -->
+            <button onclick="exportToCSV()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors self-start sm:self-auto">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              Export CSV
+            </button>
+          </div>
+
+          <!-- Filter Bar (Search & Jenis) -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-4">
+            <div class="sm:col-span-7 relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i data-lucide="search" class="w-4 h-4"></i>
+              </div>
+              <input type="text" id="searchInput" placeholder="Cari kategori atau catatan..." oninput="handleSearch(this.value)" class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors">
+            </div>
+
+            <div class="sm:col-span-5">
+              <select id="filterTypeSelect" onchange="handleTypeFilter(this.value)" class="w-full py-2 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors">
+                <option value="Semua">Semua Jenis (In & Out)</option>
+                <option value="Pemasukan">Hanya Pemasukan (+)</option>
+                <option value="Pengeluaran">Hanya Pengeluaran (-)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Loading State Indicator -->
+          <div id="loadingIndicator" class="hidden py-10 flex flex-col items-center justify-center text-slate-400">
+            <div class="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <span class="text-xs font-medium">Menyinkronkan data dengan Google Sheets...</span>
+          </div>
+
+          <!-- Table Container -->
+          <div class="overflow-x-auto rounded-xl border border-slate-100">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-3">Tanggal</th>
+                  <th class="py-3 px-3">Akun</th>
+                  <th class="py-3 px-3">Kategori & Catatan</th>
+                  <th class="py-3 px-3 text-right">Nominal</th>
+                  <th class="py-3 px-3 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="transactionTableBody" class="divide-y divide-slate-100">
+                <!-- Diisi otomatis oleh JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="hidden py-12 text-center text-slate-400">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <i data-lucide="inbox" class="w-6 h-6"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-600">Belum ada transaksi</p>
+            <p class="text-xs text-slate-400 mt-1">Gunakan formulir di sebelah kiri untuk mencatat transaksi baru.</p>
+          </div>
+
+          <!-- Total Counter -->
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>Menampilkan <strong id="displayedCount" class="text-slate-800">0</strong> transaksi</span>
+            <span class="text-[11px] text-slate-400">Tersimpan di Google Sheets & Cache Lokal</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL: PENGATURAN GOOGLE SHEETS ================= -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+            <i data-lucide="sheet" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Pengaturan Google Sheets API</h3>
+            <p class="text-xs text-slate-500">Integrasikan database cloud gratis</p>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 py-4 text-xs text-slate-600">
+        <div>
+          <label for="gasUrlInput" class="block font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Google Apps Script Web App URL:
+          </label>
+          <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono">
+          <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+            Dapatkan URL ini dari menu <strong>Deploy &gt; New deployment &gt; Web app</strong> di Google Apps Script (Access: <em>Anyone</em>).
+          </p>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-slate-700">Status Koneksi:</span>
+            <span id="modalConnectionStatus" class="font-bold text-amber-600">Belum terhubung</span>
+          </div>
+          <p class="text-[11px] text-slate-500">
+            Buka file <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-mono">PANDUAN_SETUP_GOOGLE_SHEETS.md</code> untuk melihat tutorial lengkap bergambar.
+          </p>
+        </div>
+
+        <!-- Tombol Isi Demo Data -->
+        <div class="pt-2 flex items-center justify-between">
+          <button type="button" onclick="loadSampleData()" class="text-xs text-brand-700 hover:underline font-semibold flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            Isi dengan Data Demo Contoh
+          </button>
+          <button type="button" onclick="clearAllLocalData()" class="text-xs text-rose-600 hover:underline font-semibold">
+            Reset Cache
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+          Batal
+        </button>
+        <button id="btnSaveSettings" onclick="saveGoogleSheetsConfig()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Simpan & Hubungkan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FLOATING MOBILE PWA INSTALL CARD ================= -->
+  <div id="mobileInstallCard" class="hidden fixed bottom-4 left-4 right-4 z-40 bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-3 sm:max-w-md sm:mx-auto">
+    <div class="flex items-center gap-3">
+      <img src="icons/icon-192.png" alt="BukuKas App" class="w-11 h-11 rounded-xl object-cover shadow-md shrink-0 border border-slate-700">
+      <div>
+        <h4 class="text-xs font-bold text-white">Pasang di Layar HP</h4>
+        <p class="text-[11px] text-slate-300">Buka cepat seperti aplikasi Play Store</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button onclick="dismissInstallPrompt()" class="px-2 py-1 text-slate-400 hover:text-white text-xs font-semibold">
+        Nanti
+      </button>
+      <button onclick="triggerPWAInstall()" class="px-3.5 py-2 rounded-xl bg-cilok-500 hover:bg-cilok-600 text-white text-xs font-bold shadow-md transition-all">
+        Install
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PANDUAN INSTALL IPHONE / SAFARI ================= -->
+  <div id="iosInstallModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+      <div class="w-16 h-16 mx-auto rounded-2xl overflow-hidden shadow-md border border-slate-200">
+        <img src="icons/icon-192.png" alt="BukuKas Logo" class="w-full h-full object-cover">
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Pasang di iPhone / iPad</h3>
+        <p class="text-xs text-slate-500 mt-1">Gunakan browser Safari dan ikuti langkah ini:</p>
+      </div>
+      <div class="bg-slate-50 p-4 rounded-xl text-left space-y-3 text-xs text-slate-700 border border-slate-200">
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
+          <span>Tekan tombol <strong>Share</strong> (ikon kotak dengan panah ke atas) di menu bawah browser Safari.</span>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
+          <span>Gulir ke bawah lalu pilih menu <strong>"Add to Home Screen"</strong> (Tambahkan ke Layar Utama).</span>
+        </div>
+      </div>
+      <button onclick="closeIosInstallModal()" class="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors">
+        Tutup Panduan
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>Aplikasi Pencatatan Keuangan Keluarga & UMKM Cilok &copy; 2026</div>
+      <div class="flex items-center gap-4">
+        <span>Arsitektur: SPA + Google Sheets API</span>
+        <a href="https://sheets.new" target="_blank" class="hover:text-brand-600 underline">Buka Google Sheets</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
