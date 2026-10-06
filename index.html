@@ -74,6 +74,17 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
+
+    /* Hilangkan panah spinner bawaan input number */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
@@ -298,7 +309,17 @@
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-sm">
                   Rp
                 </div>
-                <input type="number" id="inputNominal" required min="1" step="500" placeholder="Contoh: 50000" class="block w-full pl-10 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors font-semibold" oninput="updateNominalPreview(this.value)">
+                <input type="number" id="inputNominal" required min="1" step="any" placeholder="Contoh: 50000" class="block w-full pl-10 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors font-semibold" oninput="updateNominalPreview(this.value)">
+              </div>
+              <!-- Tombol Cepat Tambah Nominal (Quick Chips) -->
+              <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                <span class="text-[10px] text-slate-400 font-semibold mr-0.5">Cepat:</span>
+                <button type="button" onclick="addNominal(10000)" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors font-mono font-medium">+10rb</button>
+                <button type="button" onclick="addNominal(20000)" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors font-mono font-medium">+20rb</button>
+                <button type="button" onclick="addNominal(50000)" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors font-mono font-medium">+50rb</button>
+                <button type="button" onclick="addNominal(100000)" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors font-mono font-medium">+100rb</button>
+                <button type="button" onclick="addNominal(500000)" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors font-mono font-medium">+500rb</button>
+                <button type="button" onclick="resetNominal()" class="px-2 py-0.5 text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors font-medium ml-auto">Reset</button>
               </div>
             </div>
 

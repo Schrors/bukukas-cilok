@@ -3,7 +3,7 @@
  * Mendukung instalasi PWA di HP & fungsi offline cache
  */
 
-const CACHE_NAME = "bukukas-cache-v1";
+const CACHE_NAME = "bukukas-cache-v2";
 
 // Berkas-berkas shell aplikasi yang di-cache
 const STATIC_ASSETS = [

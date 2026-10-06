@@ -391,6 +391,26 @@ function updateNominalPreview(value) {
 }
 
 /**
+ * Tambah nominal cepat menggunakan tombol shortcut (+10rb, +20rb, dst.)
+ */
+function addNominal(amount) {
+  const input = document.getElementById("inputNominal");
+  const current = Number(input.value) || 0;
+  const nextVal = current + Number(amount);
+  input.value = nextVal;
+  updateNominalPreview(nextVal);
+}
+
+/**
+ * Reset input nominal kembali ke kosong
+ */
+function resetNominal() {
+  const input = document.getElementById("inputNominal");
+  input.value = "";
+  updateNominalPreview(0);
+}
+
+/**
  * Handler Submit Form Transaksi
  */
 async function handleTransactionSubmit(event) {
